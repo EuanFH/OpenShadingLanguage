@@ -288,6 +288,40 @@ jobs:
             build/*/testsuite/*/*.*
             build/*/CMake*.{txt,log}
 
+  linux-bleeding-edge-llvm12:
+    # Test against development master for relevant dependencies, latest
+    # supported releases of everything else.
+    name: "Linux bleeding edge: gcc10, C++17, llvm12, oiio/ocio/exr/pybind-master, avx2"
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: all
+        env:
+          CXX: g++-10
+          USE_CPP: 17
+          CMAKE_CXX_STANDARD: 17
+          LLVM_VERSION: 12.0.0
+          LLVM_DISTRO_NAME: ubuntu-20.04
+          USE_SIMD: avx2,f16c
+          OPENEXR_VERSION: master
+          OPENIMAGEIO_VERSION: master
+          OPENIMAGEIO_CMAKE_FLAGS: -DBUILD_FMT_VERSION=master
+          OPENCOLORIO_VERSION: master
+          PYBIND11_VERSION: master
+          PUGIXML_VERSION: master
+          OSL_BUILD_MATERIALX: 1
+        run: |
+            source src/build-scripts/ci-startup.bash
+            source src/build-scripts/gh-installdeps.bash
+            source src/build-scripts/ci-build-and-test.bash
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: ${{ github.job }}
+          path: |
+            build/*/testsuite/*/*.*
+            build/*/CMake*.{txt,log}
+
   linux-oldest:
     # Oldest versions of the dependencies that we can muster, and various
     # things disabled.

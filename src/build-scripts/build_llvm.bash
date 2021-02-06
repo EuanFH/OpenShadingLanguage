@@ -29,19 +29,32 @@ if [[ `uname` == "Linux" ]] ; then
     fi
     LLVMTAR=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-${LLVM_DISTRO_NAME}.tar.xz
     echo LLVMTAR = $LLVMTAR
-    if [[ "$LLVM_VERSION" == "10.0.0" ]] || [[ "$LLVM_VERSION" == "11.0.0" ]] ; then
-        # new
-        curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVMTAR} -o $LLVMTAR
+    if [[ ${LLVM_VERSION} == "12.0.0" ]]; then
+      echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main" | sudo tee -a /etc/apt/sources.list
+      echo "deb-src http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main" | sudo tee -a /etc/apt/sources.list
+      wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+      sudo apt-get update
+      sudo apt-get install libllvm-12-ocaml-dev libllvm12 llvm-12 llvm-12-dev llvm-12-runtime clang-12 clang-tools-12 libclang-common-12-dev libclang-12-dev libclang1-12 clang-format-12 clangd-12 libfuzzer-12-dev lldb-12 lld-12 libc++-12-dev libc++abi-12-dev libomp-12-dev
+      export LLVM_DIRECTORY=/usr
+      export LLVM_INCLUDES=/usr/include/llvm
+      export LLVM_LIBRARIES=/usr/lib
+      export LLVM_ROOT=/usr
     else
-        curl --location http://releases.llvm.org/${LLVM_VERSION}/${LLVMTAR} -o $LLVMTAR
+      LLVM_MAJOR_VERSION=$(echo $LLVM_VERSION | sed 's/\..*$//')
+      if (($LLVM_MAJOR_VERSION > 10)); then
+          # new
+          curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVMTAR} -o $LLVMTAR
+      else
+          curl --location http://releases.llvm.org/${LLVM_VERSION}/${LLVMTAR} -o $LLVMTAR
+      fi
+      ls -l $LLVMTAR
+      tar xf $LLVMTAR
+      rm -f $LLVMTAR
+      echo "Installed ${LLVM_VERSION} in ${LLVM_INSTALL_DIR}"
+      mkdir -p $LLVM_INSTALL_DIR && true
+      mv clang+llvm*/* $LLVM_INSTALL_DIR
+      export LLVM_DIRECTORY=$LLVM_INSTALL_DIR
+      export PATH=${LLVM_INSTALL_DIR}/bin:$PATH
+      ls -a $LLVM_DIRECTORY
     fi
-    ls -l $LLVMTAR
-    tar xf $LLVMTAR
-    rm -f $LLVMTAR
-    echo "Installed ${LLVM_VERSION} in ${LLVM_INSTALL_DIR}"
-    mkdir -p $LLVM_INSTALL_DIR && true
-    mv clang+llvm*/* $LLVM_INSTALL_DIR
-    export LLVM_DIRECTORY=$LLVM_INSTALL_DIR
-    export PATH=${LLVM_INSTALL_DIR}/bin:$PATH
-    ls -a $LLVM_DIRECTORY
 fi
